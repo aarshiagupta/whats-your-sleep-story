@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Biometric Predictor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sleep Biometric Predictor</h1>
+            <p>Predict your stress hormones and sleep quality using real science</p>
+        </div>
+
+        <div class="interactive-info" id="interactiveInfo">
+            <div class="info-progress" id="progressDots">
+                <div class="progress-dot active"></div>
+                <div class="progress-dot"></div>
+                <div class="progress-dot"></div>
+                <div class="progress-dot"></div>
+            </div>
+
+            <div class="info-content active" id="infoContent">
+            </div>
+
+            <div class="navigation-controls">
+                <button class="nav-btn" id="prevBtn" disabled>Previous</button>
+                <div class="auto-advance">
+                    <input type="checkbox" id="autoAdvance" checked>
+                    <label for="autoAdvance">Auto-advance (5s)</label>
+                </div>
+                <button class="nav-btn" id="nextBtn">Next</button>
+                <button class="nav-btn skip-btn" id="skipBtn">Skip to Quiz</button>
+            </div>
+        </div>
+
+        <div class="quiz-section" id="quizSection">
+            <div class="predictions-panel">
+                <div class="predictions-title">Your Sleep Science Match</div>
+                <p style="text-align: center; color: #64748b; margin-bottom: 20px;">
+                    Based on real MMASH research data from 21 participants
+                </p>
+            </div>
+
+            <form id="sleepQuiz">
+                <div class="question">
+                    <h3>What's your age?</h3>
+                    <div class="slider-container">
+                        <input type="range" min="20" max="40" value="27" class="slider" id="age">
+                        <div class="slider-value" id="ageValue">27 years</div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>How many hours do you typically sleep per night?</h3>
+                    <div class="slider-container">
+                        <input type="range" min="3" max="10" value="7" step="0.5" class="slider" id="sleepHours">
+                        <div class="slider-value" id="sleepHoursValue">7 hours</div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>How would you rate your daily stress level?</h3>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="stress1" name="stress" value="1" required>
+                            <label for="stress1" class="radio-label">Very Low</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress2" name="stress" value="2">
+                            <label for="stress2" class="radio-label">Low</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress3" name="stress" value="3">
+                            <label for="stress3" class="radio-label">Moderate</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress4" name="stress" value="4">
+                            <label for="stress4" class="radio-label">High</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress5" name="stress" value="5">
+                            <label for="stress5" class="radio-label">Very High</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>How long does it typically take you to fall asleep?</h3>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="30" value="10" class="slider" id="sleepLatency">
+                        <div class="slider-value" id="sleepLatencyValue">10 minutes</div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>How many times do you typically wake up during the night?</h3>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="30" value="5" class="slider" id="nightAwakenings">
+                        <div class="slider-value" id="nightAwakeningsValue">5 times</div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>Are you naturally a morning person or evening person?</h3>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="chrono1" name="chronotype" value="1" required>
+                            <label for="chrono1" class="radio-label">Definitely Evening</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="chrono2" name="chronotype" value="2">
+                            <label for="chrono2" class="radio-label">Moderately Evening</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="chrono3" name="chronotype" value="3">
+                            <label for="chrono3" class="radio-label">Neither</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="chrono4" name="chronotype" value="4">
+                            <label for="chrono4" class="radio-label">Moderately Morning</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="chrono5" name="chronotype" value="5">
+                            <label for="chrono5" class="radio-label">Definitely Morning</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Find My Sleep Science Match</button>
+            </form>
+        </div>
+
+        <div class="results" id="results">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing your sleep patterns with MMASH data...</p>
+            </div>
+            <div id="matchResults" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="global.js"></script>
+</body>
+</html>
