@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What'sYourSleepStory - Sleep Clock Viewer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">What's Your Sleep Story?</h1>
+            <p class="hero-subtitle">Discover the hidden patterns in your sleep through interactive data visualization</p>
+            <div class="hero-divider"></div>
+        </div>
+        <div class="floating-elements">
+            <div class="floating-circle circle-1"></div>
+            <div class="floating-circle circle-2"></div>
+            <div class="floating-circle circle-3"></div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Heart Rate Analysis Section -->
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2 class="section-title">Heart Rate Analysis</h2>
+                <p class="section-description">Understanding your body's rhythm between sleep and wakefulness</p>
+            </div>
+            
+            <div class="dual-content-layout">
+                <div class="chart-container" id="dualLineContainer">
+                    <div id="loadingMessage">⏳ The graph is loading... This may take a few seconds.</div>
+                    <div id="dualLineTitle"></div>
+                    <div id="dual-line-chart"></div>
+                </div>
+                
+                <div class="insights-panel" id="hr-density-writeup">
+                    <div class="insights-header">
+                        <div class="insight-icon">❤️</div>
+                        <h3>Heart Rate Insights</h3>
+                    </div>
+                    
+                    <div class="insight-content">
+                        <p class="insight-lead">Your heart doesn't just beat at a constant pace—it follows <strong>a dynamic rhythm influenced by sleep stages, activity, and recovery processes</strong>.</p>
+                        
+                        <div class="key-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">60.1</div>
+                                <div class="stat-label">BPM Sleep Avg</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">81.7</div>
+                                <div class="stat-label">BPM Awake Avg</div>
+                            </div>
+                        </div>
+                        
+                        <div class="insights-list">
+                            <div class="insight-point">
+                                <div class="point-marker"></div>
+                                <span><strong>Natural slowdown:</strong> Your body shifts into recovery mode during sleep</span>
+                            </div>
+                            <div class="insight-point">
+                                <div class="point-marker"></div>
+                                <span><strong>Active engagement:</strong> Higher heart rates reflect daily activities and stress</span>
+                            </div>
+                            <div class="insight-point">
+                                <div class="point-marker"></div>
+                                <span><strong>Recovery window:</strong> Sleep enables cardiovascular restoration</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hormone Analysis Section -->
+        <section class="analysis-section hormone-section">
+            <div class="section-header">
+                <h2 class="section-title">Hormone Balance</h2>
+                <p class="section-description">How cortisol and melatonin orchestrate your sleep-wake cycle</p>
+            </div>
+            
+            <div class="dual-content-layout reverse">
+                <div class="insights-panel" id="hormone-chart-writeup">
+                    <div class="insights-header">
+                        <div class="insight-icon">🧬</div>
+                        <h3>Hormone Dynamics</h3>
+                    </div>
+                    
+                    <div class="insight-content">
+                        <p class="insight-lead">Two key hormones work in harmony to regulate your sleep cycle: <strong>cortisol for alertness</strong> and <strong>melatonin for rest</strong>.</p>
+                        
+                        <div class="hormone-explainer">
+                            <div class="hormone-item cortisol-item">
+                                <div class="hormone-dot cortisol-dot"></div>
+                                <div class="hormone-info">
+                                    <h4>Cortisol (ng/mL)</h4>
+                                    <p>The alertness hormone that peaks in the morning to kickstart your day</p>
+                                </div>
+                            </div>
+                            <div class="hormone-item melatonin-item">
+                                <div class="hormone-dot melatonin-dot"></div>
+                                <div class="hormone-info">
+                                    <h4>Melatonin (pg/mL)</h4>
+                                    <p>The sleep hormone that rises before bedtime and fades upon waking</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="unit-note">
+                            <p><strong>Note:</strong> Cortisol measures in nanograms (1,000x larger than picograms), reflecting its higher concentration needed for metabolic regulation.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container" id="cortisolMelatoninChart">
+                    <div id="tooltip_mel" class="tooltip"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Section Toggle -->
+        <section class="interactive-section">
+            <div class="section-header">
+                <h2 class="section-title">Individual Sleep Stories</h2>
+                <p class="section-description">Dive deeper into personal sleep patterns and discover unique insights</p>
+            </div>
+            
+            <div class="button-wrapper">
+                <div class="pulse-ring"></div>
+                <button id="toggleUserView" class="toggle-button">
+                    <span class="button-text">🔍 Explore Individual Data</span>
+                    <span class="icon">▼</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- User-Specific Sections: Initially Hidden -->
+        <div id="userSpecificSection" class="user-section">
+            <!-- User Selection Navigation -->
+            <div class="user-nav-container">
+                <h3 class="nav-title">Select a Participant</h3>
+                <div id="participantNav"></div>
+            </div>
+
+            <div class="user-analysis">
+                <!-- Sleep Clock and Metrics -->
+                <section class="sleep-overview">
+                    <div class="sleep-container-wrapper">
+                        <div class="clock-container" id="sleepClockContainer">
+                            <div id="tooltip_sleep" class="tooltip"></div>
+                        </div>
+                    
+                        <div class="sleep-metrics">
+                            <h3 class="metrics-title">Sleep Summary</h3>
+                            <div class="metrics-grid">
+                                <div class="metric-box">
+                                    <div class="metric-icon">🛌</div>
+                                    <div class="metric-title">Sleep Duration</div>
+                                    <div class="metric-value" id="sleepDuration">--</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-icon">📊</div>
+                                    <div class="metric-title">Sleep Efficiency</div>
+                                    <div class="metric-value" id="sleepEfficiency">--</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-icon">⏰</div>
+                                    <div class="metric-title">WASO</div>
+                                    <div class="metric-value" id="wasoValue">--</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-icon">🌙</div>
+                                    <div class="metric-title">Sleep Onset</div>
+                                    <div class="metric-value" id="sleepOnset">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Heart Rate Time Series -->
+                <section class="hr-timeline-section">
+                    <div id="hrGraphContainer">
+                        <div id="hrGraphTitle">24-Hour Heart Rate Journey</div>
+                        <div id="hrGraphWrapper">
+                            <div id="hrGraphChart"></div>
+                            <div id="hrStatsContainer">
+                                <div id="overallStats" class="stats-panel">
+                                    <h3>Overall Statistics</h3>
+                                    <div id="overallStatsContent"></div>
+                                </div>
+                                <div id="sleepStats" class="stats-panel">
+                                    <h3>Sleep Period</h3>
+                                    <div id="sleepStatsContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What'sYourSleepStory - Sleep Clock Viewer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>What'sYourSleepStory</h1>
+    <h2>Sleep Clock Timeline Viewer</h2>
+
+    <div class="main-container">
+        <div id="dualLineContainer">
+            <div id="dualLineTitle"></div>
+            <div id="dual-line-chart"></div>
+        </div>
+        <div id="hr-density-writeup">
+            <h2>How Does Your Heart Rate Shift Between Sleep and Wakefulness?</h2>
+
+            <p>Your heart doesn’t just beat at a constant pace—it follows <strong>a dynamic rhythm influenced by sleep stages, activity, and recovery processes</strong>. This visualization captures how heart rate differs between <strong>sleep and awake periods</strong>, offering insights into the body’s physiological adjustments during rest.</p>
+            
+            <h3>Key Takeaways:</h3>
+            <ul>
+                <li><strong>A natural slowdown during sleep:</strong> The average heart rate while asleep is <strong>60.1 BPM</strong>, signaling a period of bodily relaxation and recovery.</li>
+                <li><strong>Increased activity when awake:</strong> Heart rate rises to <strong>81.7 BPM</strong> during waking hours, reflecting higher levels of movement, stress, and engagement.</li>
+                <li><strong>Overlap in heart rate ranges:</strong> While sleep and awake heart rates cluster separately, <strong>some individual variation exists</strong>, with certain sleepers maintaining elevated heart rates at night.</li>
+                <li><strong>A window into recovery:</strong> The <strong>drop in heart rate during sleep</strong> highlights the body's shift toward <strong>repair and restoration</strong>, supporting muscle recovery and cardiovascular health.</li>
+            </ul>
+            
+            <p>This comparison provides valuable insight into <strong>how your body transitions between wakefulness and sleep</strong>, helping uncover patterns that may impact <strong>your overall rest quality and well-being</strong>.</p>
+        </div>
+
+        <div id="cortisolMelatoninChart"></div>
+        <div class="tooltip" id="tooltip"></div>
+        <div id="hormone-chart-writeup">
+                <h2>How Do Cortisol & Melatonin Levels Change Before and After Sleep?</h2>
+            
+                <p>Your body's internal clock is influenced by <strong>two key hormones: cortisol and melatonin</strong>. This visualization compares their levels <strong>before sleep and upon waking</strong>, highlighting the biological shifts that regulate sleep cycles and alertness.</p>
+            
+                <h3>Understanding the Y-Axis Units</h3>
+                <ul>
+                    <li><strong>Cortisol (ng/mL - nanograms per milliliter):</strong> A stress-related hormone that <strong>helps regulate metabolism, blood sugar, and alertness</strong>. Higher levels in the morning prepare the body for wakefulness.</li>
+                    <li><strong>Melatonin (pg/mL - picograms per milliliter):</strong> The sleep hormone that <strong>signals night-time rest</strong> by promoting drowsiness. Levels rise before bedtime and drop upon waking.</li>
+                    <li><strong>Unit Differences:</strong> A <strong>nanogram (ng)</strong> is <strong>1,000 times larger</strong> than a <strong>picogram (pg)</strong>. This difference reflects that cortisol exists in the body at <strong>higher concentrations</strong>, while melatonin functions at much <strong>lower doses but remains highly effective</strong> in inducing sleep.</li>
+                </ul>
+            
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><strong>Cortisol peaks in the morning:</strong> Levels rise upon waking, signaling the body to start its <strong>active phase</strong> and stay alert.</li>
+                    <li><strong>Melatonin decreases in the morning:</strong> It fades after sleep, allowing cortisol to take over wakefulness regulation.</li>
+                    <li><strong>A biological handoff:</strong> The <strong>shift between melatonin and cortisol</strong> is a natural rhythm, ensuring that your body transitions smoothly between sleep and wake cycles.</li>
+                    <li><strong>Disruptions affect sleep quality:</strong> Factors like <strong>stress, late-night screens, or irregular sleep schedules</strong> can interfere with this balance, leading to fragmented rest and difficulty waking up.</li>
+                </ul>
+            
+                <p>Understanding how these hormones fluctuate <strong>helps you optimize your sleep habits</strong>, whether by adjusting <strong>light exposure, stress management, or bedtime routines</strong> for better sleep quality.</p>
+        </div>
+
+        <div class="button-wrapper">
+            <div class="pulse-ring"></div>
+            <div class="attention-grabber">
+                <button id="toggleUserView" class="toggle-button">
+                    🔍 View Specific Users
+                    <span class="icon">▼</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="userSpecificSection" style="display: none;">
+            <div id="participantNav"></div>
+
+            <div class="sleep-container-wrapper">
+                <div id="sleepClockContainer">
+                    <div id="tooltip_sleep" class="tooltip"></div>
+                </div>
+            
+                <div class="sleep-metrics">
+                    <h3>Sleep Summary</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="metric-title">Sleep Duration</div>
+                            <div class="metric-value" id="sleepDuration">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-title">Sleep Efficiency</div>
+                            <div class="metric-value" id="sleepEfficiency">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-title">WASO</div>
+                            <div class="metric-value" id="wasoValue">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-title">Sleep Onset</div>
+                            <div class="metric-value" id="sleepOnset">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <div id="hrGraphContainer">
+                <div id="hrGraphTitle">Heart Rate Over 24 Hours</div>
+                <div id="hrGraphWrapper" style="display: flex; gap: 20px;">
+                    <div id="hrGraphChart" style="flex-shrink: 0;"></div>
+                    <div id="hrStatsContainer" style="display: flex; flex-direction: column; gap: 15px; min-width: 200px;">
+                        <div id="overallStats" class="stats-panel">
+                            <h3>Overall Statistics</h3>
+                            <div id="overallStatsContent"></div>
+                        </div>
+                        <div id="sleepStats" class="stats-panel">
+                            <h3>Sleep Period</h3>
+                            <div id="sleepStatsContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
+ -->
