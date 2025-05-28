@@ -1,2 +1,2 @@
 participant,Gender,Height,Weight,Age,In Bed Date,In Bed Time,Out Bed Date,Out Bed Time,Onset Date,Onset Time,Latency,Efficiency,Total Minutes in Bed,Total Sleep Time (TST),Wake After Sleep Onset (WASO),Number of Awakenings,Average Awakening Length,Movement Index,Fragmentation Index,Sleep Fragmentation Index,MEQ,Daily_stress,Pittsburgh
-user_13,M,180,74,25,1,23:41,1,05:04,1,23:41,0,76.47,323,247,76,19,4,17.957,15.789,33.746,48.0,27.0,4.0
+user_13,M,180,74,25,1,23:41,2,05:04,1,23:41,0,76.47,323,247,76,19,4,17.957,15.789,33.746,48.0,27.0,4.0
