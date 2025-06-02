@@ -1,70 +1,50 @@
 let sleepData = [];
-        let filteredData = [];
-        // Generate sample data based on your structure
-        // const generateSleepData = (n = 200) => {
-        //     const data = [];
-        //     const genders = ['M', 'F'];
-            
-        //     for (let i = 0; i < n; i++) {
-        //         const age = Math.random() * 60 + 20; // 20-80
-        //         const gender = genders[Math.floor(Math.random() * 2)];
-        //         const height = gender === 'M' ? 160 + Math.random() * 25 : 150 + Math.random() * 25;
-        //         const weight = height * (0.4 + Math.random() * 0.3); // Rough BMI calculation
-        //         const stress = Math.random() * 50 + 1;
-        //         const meq = Math.random() * 60 + 20; // Chronotype score
-        //         const sleepDuration = 4 + Math.random() * 8; // 4-12 hours
-                
-        //         // Sleep quality correlations
-        //         const baseEfficiency = 85 - (age - 30) * 0.2 - stress * 0.3 + (sleepDuration - 6) * 2;
-        //         const efficiency = Math.max(50, Math.min(98, baseEfficiency + (Math.random() - 0.5) * 10));
-                
-        //         const baseWASO = 5 + (age - 30) * 0.3 + stress * 0.4 + Math.max(0, 8 - sleepDuration) * 3;
-        //         const waso = Math.max(0, baseWASO + (Math.random() - 0.5) * 10);
-                
-        //         const baseLatency = 2 + stress * 0.3 + Math.max(0, sleepDuration - 8) * 2;
-        //         const latency = Math.max(0, baseLatency + (Math.random() - 0.5) * 5);
-                
-        //         const baseAwakenings = 2 + (age - 30) * 0.1 + stress * 0.1;
-        //         const awakenings = Math.max(0, Math.round(baseAwakenings + (Math.random() - 0.5) * 3));
-                
-        //         const activityLevel = Math.random() * 10 + 1;
-                
-        //         data.push({
-        //             id: i,
-        //             gender,
-        //             height: Math.round(height),
-        //             weight: Math.round(weight),
-        //             age: Math.round(age),
-        //             stress: Math.round(stress),
-        //             meq: Math.round(meq),
-        //             sleepDuration: Math.round(sleepDuration * 10) / 10,
-        //             efficiency: Math.round(efficiency * 10) / 10,
-        //             waso: Math.round(waso * 10) / 10,
-        //             latency: Math.round(latency * 10) / 10,
-        //             awakenings: awakenings,
-        //             activityLevel: Math.round(activityLevel)
-        //         });
-        //     }
-        //     return data;
-        // };
-        
-        // let sleepData = generateSleepData();
-        d3.csv("data/all_users.csv").then(data => {
-        sleepData = data.map(d => ({
+let filteredData = [];
+let activityData = [];
+
+        // Load both CSV files
+Promise.all([
+    d3.csv("data/all_users.csv"),
+    d3.csv("data/activity_summary.csv")
+]).then(([sleepCsv, activityCsv]) => {
+    // Process sleep data
+    sleepData = sleepCsv.map(d => ({
         id: d.participant,
         age: +d.Age,
         stress: +d.Daily_stress,
-        sleepDuration: +d["Total Sleep Time (TST)"] / 60, // convert mins → hrs
+        sleepDuration: +d["Total Sleep Time (TST)"] / 60,
         efficiency: +d.Efficiency,
         waso: +d["Wake After Sleep Onset (WASO)"],
         latency: +d.Latency,
         awakenings: +d["Number of Awakenings"],
         activityLevel: +d.activityMinutes || 0
-     }));
+    }));
+    
+    // Process activity data
+    activityData = activityCsv.map(d => ({
+        id: d.user_id,
+        screenSmall: +d.screen_small_minutes,
+        screenLarge: +d.screen_large_minutes,
+        movementLight: +d.movement_light_minutes,
+        movementMedium: +d.movement_medium_minutes,
+        movementHeavy: +d.movement_heavy_minutes,
+        caffeineEvents: +d.caffeine_events,
+        alcoholEvents: +d.alcohol_events
+    }));
+    
+    // Merge the datasets
+    sleepData = sleepData.map(sleep => {
+        const activity = activityData.find(act => act.id === sleep.id);
+        return { ...sleep, ...activity };
+    }).filter(d => d.caffeineEvents !== undefined); // Only keep records with activity data
+    
+    filteredData = [...sleepData];
+    initCharts();
+});
 
-        filteredData = [...sleepData];
-        initCharts();
-        });
+        // filteredData = [...sleepData];
+        // initCharts();
+        // });
 
         // let filteredData = [...sleepData];
         
@@ -81,11 +61,21 @@ let sleepData = [];
         const tooltip = d3.select("#tooltip");
         
         // Initialize charts
+        // function initCharts() {
+        //     createEfficiencyChart();
+        //     createWASOChart();
+        //     createLatencyChart();
+        //     createAwakeningsChart();
+        //     updateMetrics();
+        // }
         function initCharts() {
             createEfficiencyChart();
             createWASOChart();
             createLatencyChart();
             createAwakeningsChart();
+            createCaffeineChart();
+            createMovementChart();
+            createScreenChart();
             updateMetrics();
         }
         
@@ -357,6 +347,198 @@ let sleepData = [];
                     tooltip.style("opacity", 0);
                 });
         }
+
+        function createCaffeineChart() {
+            const svg = d3.select("#caffeine-chart");
+            svg.selectAll("*").remove();
+            
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            const xScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d.caffeineEvents) || 10])
+                .range([0, chartWidth]);
+            
+            const yScale = d3.scaleLinear()
+                .domain([d3.min(filteredData, d => d.efficiency) - 5, d3.max(filteredData, d => d.efficiency) + 5])
+                .range([chartHeight, 0]);
+            
+            // Axes
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(xScale));
+            
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale));
+            
+            // Axis labels
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", `translate(${chartWidth/2}, ${chartHeight + 35})`)
+                .style("text-anchor", "middle")
+                .text("Caffeine Events per Day");
+            
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (chartHeight / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("Sleep Efficiency (%)");
+            
+            // Dots
+            g.selectAll(".dot")
+                .data(filteredData)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => xScale(d.caffeineEvents))
+                .attr("cy", d => yScale(d.efficiency))
+                .attr("r", 4)
+                .attr("fill", "#e74c3c")
+                .on("mouseover", (event, d) => {
+                    tooltip.style("opacity", 1)
+                        .html(`Caffeine: ${d.caffeineEvents} events<br/>Efficiency: ${d.efficiency}%<br/>ID: ${d.id}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", () => {
+                    tooltip.style("opacity", 0);
+                });
+        }
+        
+        function createMovementChart() {
+            const svg = d3.select("#movement-chart");
+            svg.selectAll("*").remove();
+            
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            const movementType = d3.select("#movement-select").property("value");
+            const movementKey = `movement${movementType.charAt(0).toUpperCase() + movementType.slice(1)}`;
+            
+            const xScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d[movementKey]) || 200])
+                .range([0, chartWidth]);
+            
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d.latency) + 5])
+                .range([chartHeight, 0]);
+            
+            // Axes
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(xScale));
+            
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale));
+            
+            // Axis labels
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", `translate(${chartWidth/2}, ${chartHeight + 35})`)
+                .style("text-anchor", "middle")
+                .text(`${movementType.charAt(0).toUpperCase() + movementType.slice(1)} Movement (min)`);
+            
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (chartHeight / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("Sleep Latency (min)");
+            
+            // Dots
+            g.selectAll(".dot")
+                .data(filteredData)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => xScale(d[movementKey]))
+                .attr("cy", d => yScale(d.latency))
+                .attr("r", 4)
+                .attr("fill", "#3498db")
+                .on("mouseover", (event, d) => {
+                    tooltip.style("opacity", 1)
+                        .html(`${movementType} Movement: ${d[movementKey]} min<br/>Latency: ${d.latency} min<br/>ID: ${d.id}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", () => {
+                    tooltip.style("opacity", 0);
+                });
+        }
+        
+        function createScreenChart() {
+            const svg = d3.select("#screen-chart");
+            svg.selectAll("*").remove();
+            
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            const screenType = d3.select("#screen-select").property("value");
+            const screenKey = `screen${screenType.charAt(0).toUpperCase() + screenType.slice(1)}`;
+            
+            const xScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d[screenKey]) || 200])
+                .range([0, chartWidth]);
+            
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d.waso) + 10])
+                .range([chartHeight, 0]);
+            
+            // Axes
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(xScale));
+            
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale));
+            
+            // Axis labels
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", `translate(${chartWidth/2}, ${chartHeight + 35})`)
+                .style("text-anchor", "middle")
+                .text(`${screenType.charAt(0).toUpperCase() + screenType.slice(1)} Screen Time (min)`);
+            
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (chartHeight / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("WASO (min)");
+            
+            // Dots
+            g.selectAll(".dot")
+                .data(filteredData)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => xScale(d[screenKey]))
+                .attr("cy", d => yScale(d.waso))
+                .attr("r", 4)
+                .attr("fill", "#9b59b6")
+                .on("mouseover", (event, d) => {
+                    tooltip.style("opacity", 1)
+                        .html(`${screenType} Screen: ${d[screenKey]} min<br/>WASO: ${d.waso} min<br/>ID: ${d.id}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", () => {
+                    tooltip.style("opacity", 0);
+                });
+        }
         
         function updateMetrics() {
             const avgEfficiency = d3.mean(filteredData, d => d.efficiency);
@@ -401,11 +583,27 @@ let sleepData = [];
         
 
         
+        // function updateAllCharts() {
+        //     // Recreate charts with filtered data
+        //     createWASOChart();
+        //     createLatencyChart();
+        //     createAwakeningsChart();
+            
+        //     // Update efficiency chart dots
+        //     const svg = d3.select("#efficiency-chart");
+        //     const g = svg.select("g");
+        //     const xScale = d3.scaleLinear().domain([4, 12]).range([0, chartWidth]);
+        //     const yScale = d3.scaleLinear().domain([50, 100]).range([chartHeight, 0]);
+        //     updateEfficiencyChart(g, xScale, yScale);
+        // }
         function updateAllCharts() {
             // Recreate charts with filtered data
             createWASOChart();
             createLatencyChart();
             createAwakeningsChart();
+            createCaffeineChart();
+            createMovementChart();
+            createScreenChart();
             
             // Update efficiency chart dots
             const svg = d3.select("#efficiency-chart");
@@ -434,6 +632,20 @@ let sleepData = [];
         d3.select("#activity-slider").on("input", function() {
             d3.select("#activity-value").text(this.value);
             filterData();
+        });
+
+        // Activity section event listeners
+        d3.select("#caffeine-slider").on("input", function() {
+            d3.select("#caffeine-value").text(this.value);
+            createCaffeineChart();
+        });
+
+        d3.select("#movement-select").on("change", function() {
+            createMovementChart();
+        });
+
+        d3.select("#screen-select").on("change", function() {
+            createScreenChart();
         });
         
         // Initialize
